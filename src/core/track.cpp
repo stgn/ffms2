@@ -190,7 +190,6 @@ int FFMS_Track::FindClosestVideoKeyFrame(int Frame) const {
     frame_vec &Frames = Data->Frames;
     Frame = std::min(std::max(Frame, 0), static_cast<int>(size()) - 1);
     for (; Frame > 0 && !Frames[Frame].KeyFrame; Frame--);
-    for (; Frame > 0 && !Frames[Frames[Frame].OriginalPos].KeyFrame; Frame--);
     return Frame;
 }
 
