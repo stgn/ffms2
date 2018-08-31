@@ -173,7 +173,8 @@ FFMS_VideoSource::FFMS_VideoSource(const char *SourceFile, FFMS_Index &Index, in
 
         SeekByPos = !strcmp(FormatContext->iformat->name, "mpeg") ||
                     !strcmp(FormatContext->iformat->name, "mpegts") ||
-                    !strcmp(FormatContext->iformat->name, "mpegtsraw"); // ???
+                    !strcmp(FormatContext->iformat->name, "mpegtsraw") ||
+                    !!FormatContext->iformat->raw_codec_id;
 
         AVCodec *Codec = avcodec_find_decoder(FormatContext->streams[VideoTrack]->codecpar->codec_id);
         if (Codec == nullptr)

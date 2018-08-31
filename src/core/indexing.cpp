@@ -318,7 +318,7 @@ void FFMS_Indexer::CheckAudioProperties(int Track, AVCodecContext *Context) {
 }
 
 void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt, int *RepeatPict,
-                                    int *FrameType, bool *Invisible, enum AVPictureStructure *LastPicStruct) {
+                                    int *FrameType, bool *Invisible, enum AVPictureStructure *LastPicStruct, int *POC) {
     if (VideoContext.Parser) {
         uint8_t *OB;
         int OBSize;
@@ -344,6 +344,8 @@ void FFMS_Indexer::ParseVideoPacket(SharedAVContext &VideoContext, AVPacket &pkt
             } else {
                 *LastPicStruct = VideoContext.Parser->picture_structure;
             }
+            // TODO: determine which other codecs specify picture order
+            *POC = VideoContext.Parser->output_picture_number;
         }
 
         *RepeatPict = VideoContext.Parser->repeat_pict;
@@ -504,11 +506,12 @@ FFMS_Index *FFMS_Indexer::DoIndexing() {
 
             int RepeatPict = -1;
             int FrameType = 0;
+            int POC = -1;
             bool Invisible = false;
-            ParseVideoPacket(AVContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible, &LastPicStruct);
+            ParseVideoPacket(AVContexts[Track], Packet, &RepeatPict, &FrameType, &Invisible, &LastPicStruct, &POC);
 
             TrackInfo.AddVideoFrame(PTS, RepeatPict, KeyFrame,
-                FrameType, Packet.pos, Invisible);
+                FrameType, Packet.pos, Invisible, POC);
         } else if (FormatContext->streams[Track]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             // For video seeking timestamps are used only if all packets have
             // timestamps, while for audio they're used if any have timestamps,

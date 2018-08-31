@@ -124,8 +124,8 @@ void FFMS_Track::Write(ZipFile &stream) const {
         WriteFrame(stream, Frames[i], i == 0 ? temp : Frames[i - 1], TT);
 }
 
-void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, bool Hidden) {
-    Data->Frames.push_back({ PTS, 0, FilePos, 0, 0, 0, FrameType, RepeatPict, KeyFrame, Hidden });
+void FFMS_Track::AddVideoFrame(int64_t PTS, int RepeatPict, bool KeyFrame, int FrameType, int64_t FilePos, bool Hidden, int POC) {
+    Data->Frames.push_back({ PTS, 0, FilePos, 0, 0, 0, FrameType, RepeatPict, KeyFrame, Hidden, POC });
 }
 
 void FFMS_Track::AddAudioFrame(int64_t PTS, int64_t SampleStart, uint32_t SampleCount, bool KeyFrame, int64_t FilePos, bool Hidden) {
@@ -376,6 +376,19 @@ void FFMS_Track::FinalizeTrack() {
         }
     } else {
         sort(Frames.begin(), Frames.end(), PTSComparison);
+    }
+
+    if (!HasTS && Frames[0].POC >= 0) {
+        // TODO: avoid reordering PTS
+        size_t LastReset = 0;
+        for (size_t i = 1; i <= size(); i++) {
+            if (i == size() || Frames[i].POC == 0) {
+                sort(Frames.begin() + LastReset, Frames.begin() + i, [](FrameInfo a, FrameInfo b) {
+                    return a.POC < b.POC;
+                });
+                LastReset = i;
+            }
+        }
     }
 
     std::vector<size_t> ReorderTemp;
